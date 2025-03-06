@@ -1,0 +1,94 @@
+# Backend API & Admin Dashboard Deployment Guide
+
+## Features Implemented
+✅ **Admin Authentication** (Login with phone number & password)
+✅ **User Management** (Fetch users)
+✅ **Live Stream Management** (Fetch streams)
+✅ **Subscription Management** (Plans, payments, and validation)
+✅ **TV Guide (EPG) Integration** – Sync program schedules and provide an API for fetching TV listings.
+✅ **Secure API with JWT Authentication** – Ensured only authenticated users and admins can access data.
+✅ **Connected Android App with API** – Implemented API calls for authentication, live streams, subscriptions, and TV guide.
+✅ **Connected Admin Dashboard with API** – Enabled management of users, streams, and subscriptions.
+✅ **Final Testing & Debugging** – Performed end-to-end testing to ensure all features work seamlessly.
+✅ **Deployment Preparation** – Set up the production environment and optimized performance.
+
+## Deployment Guide: Ubuntu Server Setup
+
+### 1. **Set Up the Ubuntu Server**
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install nginx mysql-server nodejs npm git -y
+```
+
+### 2. **Deploy Backend API**
+```bash
+cd /var/www/
+git clone <repository-url> streaming-backend
+cd streaming-backend
+npm install
+cp .env.example .env  # Configure environment variables
+nano .env  # Update API keys, database credentials, etc.
+npm run build
+pm start  # Start API server
+```
+
+### 3. **Configure Database**
+```bash
+mysql -u root -p  # Log into MySQL
+CREATE DATABASE streaming_app;
+CREATE USER 'admin'@'localhost' IDENTIFIED BY 'securepassword';
+GRANT ALL PRIVILEGES ON streaming_app.* TO 'admin'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+### 4. **Deploy Admin Dashboard**
+```bash
+cd /var/www/
+git clone <repository-url> admin-dashboard
+cd admin-dashboard
+npm install
+npm run build
+sudo cp -r dist/* /var/www/html/
+```
+
+### 5. **Configure Nginx for API & Dashboard**
+```bash
+sudo nano /etc/nginx/sites-available/streaming
+```
+Add the following configuration:
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+
+    location /api/ {
+        proxy_pass http://localhost:3000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location / {
+        root /var/www/html;
+        index index.html;
+    }
+}
+```
+```bash
+sudo ln -s /etc/nginx/sites-available/streaming /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
+```
+
+### 6. **Secure the Server with SSL (Let's Encrypt)**
+```bash
+sudo apt install certbot python3-certbot-nginx -y
+sudo certbot --nginx -d yourdomain.com
+```
+
+### 7. **Run Final Integration Tests**
+- ✅ Test API endpoints
+- ✅ Test Admin Dashboard functionalities
+- ✅ Test Android App connectivity
+
+### Deployment Complete! 🎉
